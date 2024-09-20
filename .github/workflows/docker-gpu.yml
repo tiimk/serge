@@ -34,7 +34,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/serge-chat/serge
+            ghcr.io/tiimk/serge
           flavor: |
             suffix=-cuda,onlatest=true
           tags: |
