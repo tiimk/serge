@@ -1,14 +1,20 @@
 services:
   serge:
-    image: ghcr.io/serge-chat/serge:latest
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile-gpu.dev
     container_name: serge
-    restart: unless-stopped
     ports:
       - 8008:8008
     volumes:
-      - weights:/usr/src/app/weights
-      - datadb:/data/db/
-
-volumes:
-  weights:
-  datadb:
+      - /home/data/weights:/usr/src/app/weights
+      - /home/data/db:/data/db/
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
