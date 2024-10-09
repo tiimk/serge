@@ -10,7 +10,7 @@ _term() {
 }
 
 # Install python bindings
-UNAME_M=$(dpkg --print-architecture) pip install llama-cpp-python==0.1.78 || {
+UNAME_M=$(dpkg --print-architecture) CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python || {
 	echo 'Failed to install llama-cpp-python'
 	exit 1
 }

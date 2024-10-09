@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/github/license/serge-chat/serge)
 [![Discord](https://img.shields.io/discord/1088427963801948201?label=Discord)](https://discord.gg/62Hc6FEYQH)
 
-Serge is a chat interface crafted with [llama.cpp](https://github.com/ggerganov/llama.cpp) for running GGUF models. No API keys, entirely self-hosted!
+Serge is a chat interface crafted with [llama.cpp](https://github.com/ggerganov/llama.cpp) for running Alpaca models. No API keys, entirely self-hosted!
 
 - 🌐 **SvelteKit** frontend
 - 💾 **[Redis](https://github.com/redis/redis)** for storing chat history & parameters
@@ -43,13 +43,13 @@ volumes:
   datadb:
 ```
 
-Then, just visit http://localhost:8008, You can find the API documentation at http://localhost:8008/api/docs
+Then, just visit http://localhost:8008/, You can find the API documentation at http://localhost:8008/api/docs
 
-## 🖥️ Windows
+## 🖥️ Windows Setup
 
 Ensure you have Docker Desktop installed, WSL2 configured, and enough free RAM to run models. 
 
-## ☁️ Kubernetes
+## ☁️ Kubernetes & Docker Compose Setup
 
 Instructions for setting up Serge on Kubernetes can be found in the [wiki](https://github.com/serge-chat/serge/wiki/Integrating-Serge-in-your-orchestration#kubernetes-example).
 
@@ -57,51 +57,79 @@ Instructions for setting up Serge on Kubernetes can be found in the [wiki](https
 
 | Category      | Models |
 |:-------------:|:-------|
-| **Alfred** | 40B-1023 |
-| **BioMistral | 7B |
-| **Code** | 13B, 33B |
-| **CodeLLaMA** | 7B, 7B-Instruct, 7B-Python, 13B, 13B-Instruct, 13B-Python, 34B, 34B-Instruct, 34B-Python |
-| **Gemma** | 2B, 2B-Instruct, 7B, 7B-Instruct |
-| **Falcon** | 7B, 7B-Instruct, 40B, 40B-Instruct |
-| **LLaMA 2**  | 7B, 7B-Chat, 7B-Coder, 13B, 13B-Chat, 70B, 70B-Chat, 70B-OASST |
-| **LLaMA Pro** | 8B, 8B-Instruct |
-| **Med42** | 70B |
-| **Medalpaca** | 13B |
-| **Medicine** | Chat, LLM |
-| **Meditron** | 7B, 7B-Chat, 70B |
-| **Mistral** | 7B-V0.1, 7B-Instruct-v0.2, 7B-OpenOrca |
-| **MistralLite** | 7B |
-| **Mixtral** | 8x7B-v0.1, 8x7B-Dolphin-2.7, 8x7B-Instruct-v0.1 |
-| **Neural-Chat** | 7B-v3.3 | 
-| **Notus** | 7B-v1 |
-| **Notux** | 8x7b-v1 |
-| **Nous-Hermes 2** | Mistral-7B-DPO, Mixtral-8x7B-DPO, Mistral-8x7B-SFT |
-| **OpenChat** | 7B-v3.5-1210 |
-| **OpenCodeInterpreter** | DS-6.7B, DS-33B, CL-7B, CL-13B, CL-70B |
-| **OpenLLaMA** | 3B-v2, 7B-v2, 13B-v2 |
-| **Orca 2** | 7B, 13B |
-| **Phi 2** | 2.7B |
-| **Python Code** | 13B, 33B |
-| **PsyMedRP** | 13B-v1, 20B-v1 |
-| **Starling LM** | 7B-Alpha |
-| **TinyLlama** | 1.1B |
-| **Vicuna** | 7B-v1.5, 13B-v1.5, 33B-v1.3, 33B-Coder |
-| **WizardLM** | 7B-v1.0, 13B-v1.2, 70B-v1.0 |
-| **Zephyr** | 3B, 7B-Alpha, 7B-Beta |
+| **Alpaca 🦙** | Alpaca-LoRA-65B, GPT4-Alpaca-LoRA-30B |
+| **Chronos 🌑**| Chronos-13B, Chronos-33B, Chronos-Hermes-13B |
+| **GPT4All 🌍**| GPT4All-13B |
+| **Koala 🐨**  | Koala-7B, Koala-13B |
+| **LLaMA 🦙**  | FinLLaMA-33B, LLaMA-Supercot-30B, LLaMA2 7B, LLaMA2 13B, LLaMA2 70B |
+| **Lazarus 💀**| Lazarus-30B |
+| **Nous 🧠**   | Nous-Hermes-13B |
+| **OpenAssistant 🎙️** | OpenAssistant-30B |
+| **Orca 🐬**   | Orca-Mini-v2-7B, Orca-Mini-v2-13B, OpenOrca-Preview1-13B |
+| **Samantha 👩**| Samantha-7B, Samantha-13B, Samantha-33B |
+| **Vicuna 🦙** | Stable-Vicuna-13B, Vicuna-CoT-7B, Vicuna-CoT-13B, Vicuna-v1.1-7B, Vicuna-v1.1-13B, VicUnlocked-30B, VicUnlocked-65B |
+| **Wizard 🧙** | Wizard-Mega-13B, WizardLM-Uncensored-7B, WizardLM-Uncensored-13B, WizardLM-Uncensored-30B, WizardCoder-Python-13B-V1.0 |
 
-Additional models can be requested by opening a GitHub issue. Other models are also available at [Serge Models](https://github.com/Smartappli/serge-models).
+Additional weights can be added to the `serge_weights` volume using `docker cp`:
+
+```bash
+docker cp ./my_weight.bin serge:/usr/src/app/weights/
+```
 
 ## ⚠️ Memory Usage
 
 LLaMA will crash if you don't have enough available memory for the model:
 
+| Model       | Max RAM Required |
+|-------------|------------------|
+| 7B          | 4.5GB            |
+| 7B-q2_K     | 5.37GB           |
+| 7B-q3_K_L   | 6.10GB           |
+| 7B-q4_1     | 6.71GB           |
+| 7B-q4_K_M   | 6.58GB           |
+| 7B-q5_1     | 7.56GB           |
+| 7B-q5_K_M   | 7.28GB           |
+| 7B-q6_K     | 8.03GB           |
+| 7B-q8_0     | 9.66GB           |
+| 13B         | 12GB             |
+| 13B-q2_K    | 8.01GB           |
+| 13B-q3_K_L  | 9.43GB           |
+| 13B-q4_1    | 10.64GB          |
+| 13B-q4_K_M  | 10.37GB          |
+| 13B-q5_1    | 12.26GB          |
+| 13B-q5_K_M  | 11.73GB          |
+| 13B-q6_K    | 13.18GB          |
+| 13B-q8_0    | 16.33GB          |
+| 33B         | 20GB             |
+| 33B-q2_K    | 16.21GB          |
+| 33B-q3_K_L  | 19.78GB          |
+| 33B-q4_1    | 22.83GB          |
+| 33B-q4_K_M  | 22.12GB          |
+| 33B-q5_1    | 26.90GB          |
+| 33B-q5_K_M  | 25.55GB          |
+| 33B-q6_K    | 29.19GB          |
+| 33B-q8_0    | 37.06GB          |
+| 65B         | 50GB             |
+| 65B-q2_K    | 29.95GB          |
+| 65B-q3_K_L  | 37.15GB          |
+| 65B-q4_1    | 43.31GB          |
+| 65B-q4_K_M  | 41.85GB          |
+| 65B-q5_1    | 51.47GB          |
+| 65B-q5_K_M  | 48.74GB          |
+| 65B-q6_K    | 56.06GB          |
+| 65B-q8_0    | 71.87GB          |
+
 ## 💬 Support
 
 Need help? Join our [Discord](https://discord.gg/62Hc6FEYQH)
 
+## ⭐️ Stargazers
+
+<img src="https://starchart.cc/serge-chat/serge.svg" alt="Stargazers over time" style="max-width: 100%">
+
 ## 🧾 License
 
-[Nathan Sarrazin](https://github.com/nsarrazin) and [Contributors](https://github.com/serge-chat/serge/graphs/contributors). `Serge` is free and open-source software licensed under the [MIT License](https://github.com/serge-chat/serge/blob/main/LICENSE-MIT) and [Apache-2.0](https://github.com/serge-chat/serge/blob/main/LICENSE-APACHE).
+[Nathan Sarrazin](https://github.com/nsarrazin) and [Contributors](https://github.com/serge-chat/serge/graphs/contributors). `Serge` is free and open-source software licensed under the [MIT License](https://github.com/serge-chat/serge/blob/master/LICENSE).
 
 ## 🤝 Contributing
 
@@ -110,6 +138,34 @@ If you discover a bug or have a feature idea, feel free to open an issue or PR.
 To run Serge in development mode:
 ```bash
 git clone https://github.com/serge-chat/serge.git
-cd serge/
-docker compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+To run Serge in gpu development mode:
+```bash
+git clone https://github.com/serge-chat/serge.git
+
+#download cuda 
+mkdir cuda-kits
+cd cuda-kits
+wget https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.deb
+
+#install nvidia-container-toolkit(apt)
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list \
+  && \
+    sudo apt-get update
+    
+sudo apt-get install -y nvidia-container-toolkit
+
+#install nvidia-container-toolkit(yum)
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | \
+  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+
+sudo yum install -y nvidia-container-toolkit
+
+
+docker compose -f docker-compose-gpu.dev.yml up -d --build
 ```

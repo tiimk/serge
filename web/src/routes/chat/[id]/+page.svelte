@@ -2,7 +2,7 @@
   import type { PageData } from "./$types";
   import { invalidate, goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { newChat, themeStore } from "$lib/stores";
+  import { barVisible, newChat, themeStore } from "$lib/stores";
   import { onMount, onDestroy } from "svelte";
   import ClipboardJS from "clipboard";
   import hljs from "highlight.js";
@@ -11,6 +11,7 @@
   import css from "highlight.js/lib/languages/css";
   import cpp from "highlight.js/lib/languages/cpp";
   import dockerfile from "highlight.js/lib/languages/dockerfile";
+  import graphql from "highlight.js/lib/languages/graphql";
   import go from "highlight.js/lib/languages/go";
   import javascript from "highlight.js/lib/languages/javascript";
   import json from "highlight.js/lib/languages/json";
@@ -31,6 +32,7 @@
   hljs.registerLanguage("bash", bash);
   hljs.registerLanguage("css", css);
   hljs.registerLanguage("cpp", cpp);
+  hljs.registerLanguage("graphql", graphql);
   hljs.registerLanguage("dockerfile", dockerfile);
   hljs.registerLanguage("go", go);
   hljs.registerLanguage("javascript", javascript);
@@ -59,6 +61,8 @@
     messageContainer.scrollBottom = messageContainer.scrollHeight;
   }
   let prompt = "";
+  let bar_visible: boolean;
+  const unsubscribe = barVisible.subscribe((value) => (bar_visible = value));
 
   async function askQuestion() {
     const data = new URLSearchParams();
@@ -102,7 +106,10 @@
     });
 
     eventSource.onerror = async (error) => {
+      console.log("error", error);
       eventSource.close();
+      //history[history.length - 1].data.content = "A server error occurred.";
+      //await invalidate("/api/chat/" + $page.params.id);
     };
   }
 
@@ -140,32 +147,9 @@
 
     if (response.status === 200) {
       await invalidate("/api/chat/" + $page.params.id);
-    } else if (response.status === 202) {
-      showToast("Chat in progress!");
     } else {
-      showToast("An error occurred: " + response.statusText);
+      console.error("Error " + response.status + ": " + response.statusText);
     }
-  }
-
-  function showToast(message: string) {
-    // Create the toast element
-    const toast = document.createElement("div");
-    toast.className = `alert alert-info`;
-    toast.textContent = message;
-    const toastContainer = document.getElementById("toast-container");
-
-    // Append the toast to the toast container if it exists
-    if (toastContainer) {
-      toastContainer.appendChild(toast);
-    } else {
-      console.error("Toast container not found?");
-      return;
-    }
-
-    // Automatically remove the toast after a delay
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
   }
 
   const md: MarkdownIt = new MarkdownIt({
@@ -259,6 +243,10 @@
   const onMouseLeave = () => {
     sendBottomHovered = false;
   };
+  const toggleBar = () => {
+    bar_visible = !bar_visible;
+    barVisible.set(bar_visible);
+  };
   const scrollToBottom = (node: Element, history: any[]) => {
     const scroll = () =>
       node.scroll({
@@ -270,22 +258,41 @@
     return { update: scroll };
   };
   onDestroy(() => {
+    unsubscribe;
     styleElement && styleElement.remove();
   });
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-  class="relative h-full max-h-screen overflow-hidden"
+  class="relative mx-auto h-full max-h-screen w-full overflow-hidden"
   on:keydown={handleKeyDown}
 >
-  <div class="mx-20">
-    <div class="h-8 justify-content border-b border-base-content/[.2]">
-      <div class="h-full relative flex items-center justify-center">
-        <div
-          class="flex flex-row items-center justify-center color-base-300"
-          title="Model"
-        >
+  <div class="w-full border-b border-base-content/[.2]">
+    <div class="h-8 px-2 md:container md:mx-auto md:px-0">
+      <div class="w-full h-full relative flex items-center justify-center">
+        {#if !bar_visible}
+          <button
+            class="absolute p-0 top-0 bottom-0 left-0 w-10 h-8 min-h-0 btn btn-ghost flex items-center justify-center font-semibold z-40"
+            on:click={toggleBar}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="w-4 h-4 fill-base-content"
+            >
+              <path
+                d="M7.22 14.47 9.69 12 7.22 9.53a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l3 3a.75.75 0 0 1 0 1.06l-3 3a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Z"
+              >
+              </path>
+              <path
+                d="M3.75 2h16.5c.966 0 1.75.784 1.75 1.75v16.5A1.75 1.75 0 0 1 20.25 22H3.75A1.75 1.75 0 0 1 2 20.25V3.75C2 2.784 2.784 2 3.75 2ZM3.5 3.75v16.5c0 .138.112.25.25.25H15v-17H3.75a.25.25 0 0 0-.25.25Zm13 16.75h3.75a.25.25 0 0 0 .25-.25V3.75a.25.25 0 0 0-.25-.25H16.5Z"
+              >
+              </path>
+            </svg>
+          </button>
+        {/if}
+        <div class="flex flex-row items-center justify-center color-base-300">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 11.12744 16"
@@ -300,10 +307,7 @@
             {data.chat.params.model_path}
           </span>
         </div>
-        <div
-          class="pl-4 hidden sm:flex flex-row items-center justify-center"
-          title="Temperature"
-        >
+        <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 5.31286 16"
@@ -318,10 +322,7 @@
             {data.chat.params.temperature}
           </span>
         </div>
-        <div
-          class="pl-4 hidden sm:flex flex-row items-center justify-center"
-          title="Context Length/Maximum Generated Tokens"
-        >
+        <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 16 16"
@@ -337,10 +338,7 @@
           </span>
         </div>
         {#if data.chat.params.n_threads > 0}
-          <div
-            class="pl-4 hidden sm:flex flex-row items-center justify-center"
-            title="Threads"
-          >
+          <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -361,10 +359,7 @@
           </div>
         {/if}
         {#if data.chat.params.n_gpu_layers > 0}
-          <div
-            class="pl-4 hidden sm:flex flex-row items-center justify-center"
-            title="GPU Layers"
-          >
+          <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
@@ -380,10 +375,7 @@
             </span>
           </div>
         {/if}
-        <div
-          class="pl-4 hidden sm:flex flex-row items-center justify-center"
-          title="Repeat Penalty"
-        >
+        <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 16 16"
@@ -402,10 +394,7 @@
             {data.chat.params.repeat_penalty}
           </span>
         </div>
-        <div
-          class="pl-4 hidden sm:flex flex-row items-center justify-center"
-          title="Top_k-Top_p"
-        >
+        <div class="pl-4 hidden sm:flex flex-row items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 16 16"
@@ -430,46 +419,49 @@
     <div class="h-max pb-4">
       {#each history as question, i}
         {#if question.type === "human"}
-          <div class="w-10/12 mx-auto sm:w-10/12 chat chat-end py-4">
-            <div class="chat-image self-start pl-1 pt-1">
-              <div
-                class="mask mask-squircle online flex aspect-square w-8 items-center justify-center overflow-hidden bg-gradient-to-b from-primary to-primary-focus"
-              >
-                <span class="text-xs text-neutral-content">I</span>
-              </div>
-            </div>
-            <div
-              class="chat-bubble whitespace-normal break-words bg-base-300 text-base font-light text-base-content"
-            >
-              <!-- {question.data.content} -->
-              <div class="w-full overflow-hidden break-words">
-                {@html renderMarkdown(question.data.content)}
-              </div>
-            </div>
-            {#if i === history.length - 1 && !isLoading}
-              <div style="width: 100%; text-align: right;">
-                <button
-                  disabled={isLoading}
-                  class="btn-ghost btn-sm btn"
-                  on:click|preventDefault={() => deletePrompt(data.chat.id, i)}
+          <div class="w-full border-y border-base-content/[.2] bg-base-300">
+            <div class="w-11/12 mx-auto sm:w-10/12 chat chat-start py-4">
+              <div class="chat-image self-start pl-1 pt-1">
+                <div
+                  class="mask mask-squircle online flex aspect-square w-8 items-center justify-center overflow-hidden bg-gradient-to-b from-primary to-primary-focus"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    height="16"
-                  >
-                    <path
-                      class="fill-base-content"
-                      d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"
-                    />
-                  </svg>
-                </button>
+                  <span class="text-xs text-neutral-content">I</span>
+                </div>
               </div>
-            {/if}
+              <div
+                class="chat-bubble whitespace-normal break-words bg-base-300 text-base font-light text-base-content"
+              >
+                <!-- {question.data.content} -->
+                <div class="w-full overflow-hidden break-words">
+                  {@html renderMarkdown(question.data.content)}
+                </div>
+              </div>
+              {#if i === history.length - 1 && !isLoading}
+                <div style="width: 100%; text-align: right;">
+                  <button
+                    disabled={isLoading}
+                    class="btn-ghost btn-sm btn"
+                    on:click|preventDefault={() =>
+                      deletePrompt(data.chat.id, i)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      height="16"
+                    >
+                      <path
+                        class="fill-base-content"
+                        d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              {/if}
+            </div>
           </div>
         {:else if question.type === "ai"}
-          <div class="w-10/12 mx-auto sm:w-10/12 chat chat-start py-4">
+          <div class="w-11/12 mx-auto sm:w-10/12 chat chat-start py-4">
             <div class="chat-image self-start pl-1 pt-1">
               <div
                 class="mask mask-squircle online flex aspect-square w-8 items-center justify-center overflow-hidden bg-gradient-to-b from-primary to-primary-focus"
@@ -510,7 +502,6 @@
                       d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"
                     />
                   </svg>
-                  <span class="sr-only">Delete</span>
                 </button>
               </div>
             {/if}
@@ -550,7 +541,7 @@
         class="btn btn-ghost h-10 w-14 rounded-l-none rounded-r-lg border-0 text-lg"
         class:loading={isLoading}
         on:click|preventDefault={askQuestion}
-        ><span class="sr-only">Send</span>
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 16 16"
@@ -565,8 +556,5 @@
         </svg>
       </button>
     </div>
-  </div>
-  <div id="toast-container" class="toast">
-    <!-- Toast notifications will be added here -->
   </div>
 </div>

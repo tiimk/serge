@@ -21,7 +21,6 @@ FROM python:3.11-slim-bookworm as release
 # Set ENV
 ENV NODE_ENV='production'
 ENV TZ=Etc/UTC
-ENV GGML_CUDA=1
 WORKDIR /usr/src/app
 
 # Copy artifacts
@@ -30,14 +29,11 @@ COPY --from=redis /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 COPY --from=frontend /usr/src/app/web/build /usr/src/app/api/static/
 COPY ./api /usr/src/app/api
 COPY scripts/deploy.sh /usr/src/app/deploy.sh
-COPY scripts/serge.env /usr/src/app/serge.env
-COPY vendor/requirements.txt /usr/src/app/requirements.txt
 
 # Install api dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends dumb-init \
+    && apt-get install -y --no-install-recommends cmake build-essential dumb-init curl \
     && pip install --no-cache-dir ./api \
-    && pip install -r /usr/src/app/requirements.txt \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* \
     && chmod 755 /usr/src/app/deploy.sh \
     && chmod 755 /usr/local/bin/redis-server \

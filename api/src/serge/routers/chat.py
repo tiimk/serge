@@ -1,7 +1,5 @@
-import os
-
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from langchain.memory import RedisChatMessageHistory
 from langchain.schema import SystemMessage, messages_to_dict, AIMessage, HumanMessage
 from llama_cpp import Llama
@@ -32,8 +30,13 @@ async def create_new_chat(
     init_prompt: str = "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
     n_threads: int = 4,
 ):
-    if not os.path.exists(f"/usr/src/app/weights/{model}.bin"):
-        raise ValueError(f"Model can't be found: /usr/src/app/weights/{model}.bin")
+    try:
+        client = Llama(
+            model_path="/usr/src/app/weights/" + model + ".bin",
+        )
+        del client
+    except Exception as exc:
+        raise ValueError(f"Model can't be found: {exc}")
 
     client = Redis(host="localhost", port=6379, decode_responses=False)
 
@@ -133,8 +136,7 @@ async def delete_prompt(chat_id: str, idx: int):
     history = RedisChatMessageHistory(chat_id)
 
     if idx >= len(history.messages):
-        logger.error("Unable to delete message, chat in progress")
-        raise HTTPException(status_code=202, detail="Unable to delete message, chat in progress")
+        raise ValueError("Index out of range")
 
     messages = history.messages.copy()[:idx]
     history.clear()
@@ -193,7 +195,7 @@ def stream_ask_a_question(chat_id: str, prompt: str):
     logger.debug("creating Llama client")
     try:
         client = Llama(
-            model_path=f"/usr/src/app/weights/{chat.params.model_path}.bin",
+            model_path="/usr/src/app/weights/" + chat.params.model_path + ".bin",
             n_ctx=len(chat.params.init_prompt) + chat.params.n_ctx,
             n_gpu_layers=chat.params.n_gpu_layers,
             n_threads=chat.params.n_threads,
@@ -262,7 +264,7 @@ async def ask_a_question(chat_id: str, prompt: str):
 
     try:
         client = Llama(
-            model_path=f"/usr/src/app/weights/{chat.params.model_path}.bin",
+            model_path="/usr/src/app/weights/" + chat.params.model_path + ".bin",
             n_ctx=len(chat.params.init_prompt) + chat.params.n_ctx,
             n_threads=chat.params.n_threads,
             n_gpu_layers=chat.params.n_gpu_layers,

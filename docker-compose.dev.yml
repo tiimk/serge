@@ -3,10 +3,10 @@ services:
     restart: on-failure
     build: 
       context: .
-      dockerfile: docker/Dockerfile.dev
+      dockerfile: Dockerfile.dev
     volumes:
-      - ./web:/usr/src/app/web/:z
-      - ./api:/usr/src/app/api/:z
+      - ./web:/usr/src/app/web/
+      - ./api:/usr/src/app/api/
       - datadb:/data/db
       - weights:/usr/src/app/weights/
       - /etc/localtime:/etc/localtime:ro
