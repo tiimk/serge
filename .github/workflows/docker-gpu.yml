@@ -16,8 +16,8 @@ on:
     branches:
       - "*"
     paths:
-      - "docker/Dockerfile.gpu"
-      - "scripts/deploy.sh"
+      - "Dockerfile-gpu.dev"
+      - "scripts/dev-gpu.sh"
       - "scripts/dev.sh"
   workflow_dispatch:
   release:
@@ -62,7 +62,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/Dockerfile.gpu
+          file: Dockerfile-gpu.dev
           push: ${{ github.event_name != 'pull_request' }}
           target: release
           cache-from: type=gha
