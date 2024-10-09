@@ -21,6 +21,7 @@ FROM python:3.11-slim-bookworm as release
 # Set ENV
 ENV NODE_ENV='production'
 ENV TZ=Etc/UTC
+ENV LLAMA_CUBLAS=1
 WORKDIR /usr/src/app
 
 # Copy artifacts
