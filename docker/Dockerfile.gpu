@@ -30,14 +30,16 @@ WORKDIR /usr/src/app
 # Install build tools, dependencies, and CUDA
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        gcc \
-        g++ \
+        gcc-11 \
+        g++-11 \
         cmake \
         dumb-init \
         git \
         wget \
         gnupg2 \
         software-properties-common \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11 \
     && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb \
     && dpkg -i cuda-keyring_1.0-1_all.deb \
     && apt-get update \
