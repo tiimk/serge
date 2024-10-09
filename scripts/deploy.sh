@@ -10,9 +10,12 @@ _term() {
 }
 
 # Install python bindings
-UNAME_M=$(dpkg --print-architecture) CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python || {
-	echo 'Failed to install llama-cpp-python'
-	exit 1
+UNAME_M=$(dpkg --print-architecture) \
+CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11" \
+CUDAHOSTCXX=/usr/bin/g++-11 \
+pip install llama-cpp-python || {
+    echo 'Failed to install llama-cpp-python'
+    exit 1
 }
 
 # Start Redis instance
